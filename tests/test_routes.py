@@ -25,6 +25,8 @@ HTTPS_ENVIRON = {'wsgi.url_scheme': 'https'}
 ######################################################################
 #  T E S T   C A S E S
 ######################################################################
+
+
 class TestAccountService(TestCase):
     """Account Service Tests"""
 
@@ -72,10 +74,10 @@ class TestAccountService(TestCase):
             account.id = new_account["id"]
             accounts.append(account)
         return accounts
+
     def _create_account(self):
         """Helper method to create one account"""
         return self._create_accounts(1)[0]
-
 
     ######################################################################
     #  A C C O U N T   T E S T   C A S E S
@@ -130,7 +132,6 @@ class TestAccountService(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
-    # ADD YOUR TEST CASES HERE ...
     def test_get_account(self):
         """It should Get a single Account"""
         account_data = {
@@ -153,42 +154,40 @@ class TestAccountService(TestCase):
         """It should return 404 when Account is not found"""
         response = self.client.get("/accounts/9999")
         self.assertEqual(response.status_code, 404)
+
     def test_list_accounts(self):
-        """ It should list all accounts """
+        """It should list all accounts"""
         self._create_account()
         response = self.client.get("/accounts")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
         self.assertTrue(isinstance(data, list))
 
-
     def test_read_account(self):
-        """ It should read an account """
+        """It should read an account"""
         account = self._create_account()
-        response = self.client.get(f"/accounts/{account.id}")  
+        response = self.client.get(f"/accounts/{account.id}")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
         self.assertEqual(data["id"], account.id)
 
-
     def test_read_account_not_found(self):
-        """ It should return 404 if account is not found """
+        """It should return 404 if account is not found"""
         response = self.client.get("/accounts/0")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-
     def test_update_account(self):
-        """ It should update an existing account """
+        """It should update an existing account"""
         account = self._create_account()
-        new_data = account.serialize() 
+        new_data = account.serialize()
         new_data["name"] = "Updated Name"
-        response = self.client.put(f"/accounts/{account.id}", json=new_data) 
+        response = self.client.put(f"/accounts/{account.id}", json=new_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
         self.assertEqual(data["name"], "Updated Name")
 
     def test_update_account_not_found(self):
-        """ It should return 404 for updating non-existent account """
+        """It should return 404 for updating non-existent account"""
         fake_data = {
             "name": "Ghost",
             "email": "ghost@example.com",
@@ -199,16 +198,14 @@ class TestAccountService(TestCase):
         response = self.client.put("/accounts/9999", json=fake_data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-
     def test_delete_account(self):
-        """ It should delete an account """
+        """It should delete an account"""
         account = self._create_account()
         response = self.client.delete(f"/accounts/{account.id}")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-
     def test_delete_account_not_found(self):
-        """ It should still return 204 if account doesn't exist """
+        """It should still return 204 if account doesn't exist"""
         response = self.client.delete("/accounts/9999")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -219,7 +216,7 @@ class TestAccountService(TestCase):
         headers = {
             'X-Frame-Options': 'SAMEORIGIN',
             'X-Content-Type-Options': 'nosniff',
-            'Content-Security-Policy': 'default-src \'self\'; object-src \'none\'',
+            'Content-Security-Policy': "default-src 'self'; object-src 'none'",
             'Referrer-Policy': 'strict-origin-when-cross-origin'
         }
         for key, value in headers.items():
@@ -229,5 +226,4 @@ class TestAccountService(TestCase):
         """It should return a CORS header"""
         response = self.client.get('/', environ_overrides=HTTPS_ENVIRON)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Check for the CORS header
         self.assertEqual(response.headers.get('Access-Control-Allow-Origin'), '*')
