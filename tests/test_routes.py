@@ -69,6 +69,10 @@ class TestAccountService(TestCase):
             account.id = new_account["id"]
             accounts.append(account)
         return accounts
+    def _create_account(self):
+        """Helper method to create one account"""
+        return self._create_accounts(1)[0]
+
 
     ######################################################################
     #  A C C O U N T   T E S T   C A S E S
@@ -141,8 +145,66 @@ class TestAccountService(TestCase):
         response = self.client.get(f"/accounts/{account_id}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["name"], "Alice")
-        
+
     def test_get_account_not_found(self):
         """It should return 404 when Account is not found"""
         response = self.client.get("/accounts/9999")
         self.assertEqual(response.status_code, 404)
+    def test_list_accounts(self):
+        """ It should list all accounts """
+        self._create_account()
+        response = self.client.get("/accounts")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertTrue(isinstance(data, list))
+
+
+    def test_read_account(self):
+        """ It should read an account """
+        account = self._create_account()
+        response = self.client.get(f"/accounts/{account.id}")  
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(data["id"], account.id)
+
+
+    def test_read_account_not_found(self):
+        """ It should return 404 if account is not found """
+        response = self.client.get("/accounts/0")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+    def test_update_account(self):
+        """ It should update an existing account """
+        account = self._create_account()
+        new_data = account.serialize() 
+        new_data["name"] = "Updated Name"
+        response = self.client.put(f"/accounts/{account.id}", json=new_data) 
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(data["name"], "Updated Name")
+
+    def test_update_account_not_found(self):
+        """ It should return 404 for updating non-existent account """
+        fake_data = {
+            "name": "Ghost",
+            "email": "ghost@example.com",
+            "address": "Nowhere",
+            "phone_number": "0000000000",
+            "date_joined": "2024-01-01T00:00:00"
+        }
+        response = self.client.put("/accounts/9999", json=fake_data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+    def test_delete_account(self):
+        """ It should delete an account """
+        account = self._create_account()
+        response = self.client.delete(f"/accounts/{account.id}")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+
+    def test_delete_account_not_found(self):
+        """ It should still return 204 if account doesn't exist """
+        response = self.client.delete("/accounts/9999")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
